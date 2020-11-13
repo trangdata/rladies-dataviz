@@ -1,0 +1,319 @@
+---
+title: "COVID-19 visualization"
+output: html_document
+---
+
+If this is your first time in RMarkdown, welcome!
+Some quick primers:
+- To run a *line* of code, place your cursor there and `Cmd+Enter` (or `Ctrl+Enter` in Windows/Linux).
+- To run a *chunk* of code, place your cursor there and `Cmd+Shift+Enter` (or `Ctrl+Shift+Enter` in Windows/Linux).
+- To ask what a function does, try putting a `?` before the function name.
+For example:
+```{r}
+?mean
+```
+
+```{r}
+# install.packages('zoo')
+# remotes::install_github("RamiKrispin/coronavirus")   
+# remotes::install_github("yutannihilation/gghighlight")
+# install.packages('ggthemes')
+```
+
+## Setup
+```{r}
+library(tidyverse)  
+library(zoo) # calculate moving average
+library(gghighlight)
+library(coronavirus)
+
+source('utils.R', echo=TRUE)
+```
+
+## Read in data
+
+```{r}
+# update_dataset()
+data("coronavirus")
+coronavirus %>% 
+  head()
+```
+
+##  PART 1: Exploring
+
+Choose a few countries to plot (or go with preselected ones):
+
+```{r}
+# selected_countries <- sample(unique(coronavirus$country), 5)
+selected_countries <- selected_cou_FT
+```
+
+```{r}
+mov_avg_covid <- coronavirus %>%
+  filter(country %in% selected_countries,
+         type == "death") %>%
+  group_by(date, country) %>%
+  summarise(total_death = sum(cases), .groups = 'drop') %>%
+  group_by(country) %>%
+  mutate(week_movavg = zoo::rollmean(total_death, k = 7, fill = "extend")) %>%
+  mutate(id = row_number()) %>% 
+  filter(id %% 7 == 0) %>% # reduce the number of dots to plot to make ploting faster
+  {.}
+```
+
+```{r}
+mov_avg_covid %>% 
+  filter(id %% 7 == 0) %>% # reduce the number of dots to plot to make ploting faster
+  ggplot(aes(date, week_movavg)) +
+  geom_path(size = 1.5) 
+```
+
+What happened?
+How do we tell ggplot to draw lines between points of the same country?
+
+```{r}
+mov_avg_covid %>% 
+  filter(id %% 7 == 0) %>% # reduce the number of dots to plot to make ploting faster
+  ggplot(aes(date, week_movavg, group = country)) +
+  geom_path(size = 1.5)
+```
+
+How can we tell which country is which?
+Can we try colors?
+
+```{r}
+mov_avg_covid %>% 
+  ggplot(aes(date, week_movavg, group = country, color = country)) +
+  geom_path(size = 1.5)
+```
+
+Try other conditions for filtering:
+- Visualize only Asian countries?
+- Visualize number of cases instead of death tolls?
+
+What about facets? (or small multiples)
+```{r}
+mov_avg_covid %>% 
+  ggplot(aes(date, week_movavg)) +
+  geom_path(size = 1.5) +
+  facet_wrap(~ country) +
+  NULL
+```
+
+
+But I want to compare one country to the others...
+```{r}
+mov_avg_covid %>% 
+  ggplot(aes(date, week_movavg, group = country)) +
+  geom_path() +
+  facet_wrap(~ country) +
+  gghighlight() +
+  NULL
+```
+
+## PART 3: Fine tuning
+### Exercises
+
+1. Can we add `scale_y_log10()` to plot the y-axis in log scale? 
+Do we think this is "better"?
+2. Examine the `scale_x_date()` function to see if we can adjust the `x` ticks 
+to "break" every 2 months?
+3. Maybe add `ft_theme()`? (already sourced from `utils.R` earlier)
+What about other gg_themes()?
+4. Do you think the label for the `x` axis is necessary? 
+What about the `y` axis? What if we want to remove them?
+5. Can we make `#0A508C` the color of the highlighted country?
+
+
+```{r eval=FALSE}
+mov_avg_covid %>% 
+  ggplot(aes(date, week_movavg, group = country)) +
+  geom_path(color = _________, size = 1.5) +
+  gghighlight() +
+  facet_wrap(~ country) +
+  scale_y_log10(labels = _________) +
+  scale_x_date(breaks = ________) +
+  labs(x = _________, y = _________,
+       title = _________,
+       subtitle = _________) +
+  ft_theme() +
+  NULL
+```
+
+Extra credits:
+6. Can we use the argument `unhighlighted_params` in `gghighlight()` to make the unhighlighted countries thinner and lighter? (so that the highlighted country stands out  more)
+7. Can we use the argument `sec.axis` in `scale_y_log10()` couple with the function `sec_axis()`
+
+```{r}
+
+```
+
+That's it!!!
+These only few lines of code got you close to this chart:
+https://twitter.com/jburnmurdoch/status/1250538655707430913,
+except we plotted these with updated data!!!
+Note slight difference between their `x` axis and ours (I did this intentionally so we could play with `scale_x_date`), 
+extra end point at the end of each line (can you try adding this?), 
+font (ggplot2 does not do great with outside fonts in my experience),
+direct labeling, etc.
+But you know what I mean :).
+
+
+## PART 4: Let's see your charts!
+
+Now that we're confident we could regenerate any chart, let's play around with this one a bit more.
+You can change the theme (check out `library(ggthemes)`), color of the highlighted countries, 
+or even put them back into just one "big single" rather than "small multiples",
+add some direct labeling with `geom_text()` or `library(ggrepel)`,
+etc.
+(Check out https://ig.ft.com/coronavirus-chart/ for inspiration!)
+Please share your final chart(s) here:
+https://drive.google.com/drive/folders/1N7VNDqBkakzX07XZaiO5xUKtqdqLbX8z?usp=sharing
+
+
+References:
+https://peymankor.netlify.app/post/ft/
+https://www.ft.com/content/a2901ce8-5eb7-4633-b89c-cbdf5b386938
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+p <- mov_avg_covid %>% 
+  ggplot(aes(date, week_movavg, group = country)) +
+  geom_path(color = '#0A508C', lineend = "round", size = 1.5) +
+  gghighlight(unhighlighted_params = list(size = 0.5, colour = alpha("grey", 0.4))) +
+  facet_wrap(~ country) +
+  scale_y_log10(labels = scales::comma_format(accuracy = 1),
+                sec.axis = sec_axis(~ ., labels = scales::comma_format(accuracy = 1))) +
+  scale_x_date(breaks = '2 months', date_labels = '%b', 
+               expand = expansion(add = 0, mult = 0)) +
+  labs(x = NULL, y = NULL,
+       title = "Daily death tolls",
+       subtitle = "Daily death with coronavirus (7-day rolling average), by number of the days since 3 daily deaths first recorded") +
+  ft_theme() +
+  NULL
+
+ggsave('ft_rep.png', p, height = 10, width = 15)
+```

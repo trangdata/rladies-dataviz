@@ -1,0 +1,177 @@
+---
+title: "Smartphone Adoption"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(rcartocolor)
+library(gghighlight)
+library(gganimate)
+library(scales)
+theme_set(
+  theme_minimal() +
+    theme(legend.title = element_blank(),
+          panel.grid.minor = element_blank()))
+```
+
+Data description:
+https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-11-10/readme.md
+
+```{r}
+mobile_raw <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-11-10/mobile.csv')
+mobile <- mobile_raw %>% 
+  filter(!is.na(mobile_subs))
+# landline <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-11-10/landline.csv')
+```
+
+## Exploring
+
+## 
+```{r}
+gdp_mobile <- mobile %>% 
+  filter(year == 2010) %>% 
+  ggplot(aes(x = gdp_per_cap, y = mobile_subs)) +
+  geom_point(aes(color = continent))
+gdp_mobile
+```
+
+```{r}
+gdp_mobile + 
+  scale_x_log10() +
+  scale_color_carto_d() +
+  gghighlight(continent == 'Europe') +
+  NULL
+```
+
+```{r}
+mobile %>% 
+  filter(year == 2010) %>% 
+  ggplot(aes(x = gdp_per_cap, y = mobile_subs)) +
+  geom_point(aes(color = entity, size = total_pop)) + 
+  scale_x_log10(labels = scales::dollar_format()) +
+  scale_color_carto_d() +
+  scale_size_continuous(guide = FALSE) +
+  gghighlight(entity %in% c('United States', 'Vietnam'))
+```
+
+```{r}
+mobile %>% 
+  ggplot(aes(x = year, y = mobile_subs)) +
+  geom_line(aes(color = entity)) + 
+  scale_x_log10() +
+  scale_color_carto_d() +
+  scale_size_continuous(guide = FALSE) +
+  # facet_wrap(~ continent) +
+  gghighlight(
+    entity %in% c('United States', 'Vietnam')||
+      max(mobile_subs) > 210,
+    unhighlighted_params = list(color = 'grey90'))
+```
+
+
+## gganimate
+
+```{r}
+gdp_subs_ani <- mobile %>% 
+  mutate(year = as.integer(year)) %>% 
+  filter(year < 2013) %>% 
+  ggplot(aes(gdp_per_cap, mobile_subs, size = total_pop, colour = continent)) +
+  scale_color_carto_d() +
+  geom_point(alpha = 0.7) +
+  scale_x_log10() +
+  scale_size_continuous(guide = FALSE) +
+  # facet_wrap(~ continent) +
+  labs(title = 'Year: {frame_time}',
+       x = 'GDP per capita', 
+       y = '% Mobile subscription') +
+  transition_time(year) +
+  ease_aes('linear')
+
+# animate(gdp_subs_ani, fps = 4, end_pause = 30)
+anim_save('gdp_subs_ani.gif', gdp_subs_ani, fps = 4, end_pause = 30)
+```
+
+```{r}
+mobile %>% 
+  filter(year == 2014) %>% 
+  ggplot(aes(gdp_per_cap, mobile_subs, colour = continent)) +
+  geom_point(alpha = 0.7, show.legend = FALSE) +
+  scale_x_log10() +
+  facet_wrap(~ continent)
+```
+
+```{r}
+ranked_mobile_subs <- mobile %>%  
+  select(entity, mobile_subs, year, continent) %>%
+  group_by(year) %>%  
+  arrange(year, - mobile_subs) %>%  
+  # assign ranking per year
+  mutate(rank = 1:n()) %>%
+  filter(rank <= 10,
+         year < 2017)
+
+# mobile_subs_race <- ranked_mobile_subs %>% 
+#   filter(year < 2004) %>%
+#   mutate(year = as.integer(year),
+#          entity = as.factor(entity) %>% 
+#            tidytext::reorder_within(mobile_subs, year)) %>% 
+#   ggplot(aes(mobile_subs, entity, fill = continent)) +
+#   geom_col() +
+#   tidytext::scale_y_reordered() +
+#   scale_fill_carto_d() +
+#   facet_wrap(~ year, scales = 'free_y') +
+#   labs(x = '% Mobile subscriptions', y = NULL)
+# mobile_subs_race
+
+mobile_subs_static <- ranked_mobile_subs %>%
+  ggplot(aes(
+    fill = continent,
+    ymin = rank - .45,  
+    ymax = rank + .45,  
+    y = rank,
+    xmin = 0 ,  
+    xmax = mobile_subs)) +
+  geom_text(
+    col = "grey10",
+    hjust = "left",
+    aes(label = entity,
+        x = mobile_subs + 10),
+  ) +
+  geom_rect(alpha = .7) +
+  scale_fill_carto_d() +
+  facet_wrap(~ year) +
+  labs(x = '% Mobile subscriptions', y = NULL) +
+  scale_y_reverse() +  
+  scale_x_continuous(
+    limits = c(0, 400),
+    breaks = seq(0, 400, 100)) +
+  NULL
+mobile_subs_static
+
+```
+
+```{r}
+mobile_subs_race <- mobile_subs_static +
+  facet_null() +
+  geom_text(x = 300 , y = -10,
+            aes(label = as.character(year)),
+            size = 15, col = "grey18") +
+  geom_rect(alpha = .7) +
+  aes(group = entity) +  
+  gganimate::transition_time(year)
+  
+```
+
+```{r}
+# animate(mobile_subs_race, fps = 5, nframes = 100, height = 800, width = 800)
+anim_save('mobile_subs_race.gif', 
+          mobile_subs_race + exit_fade(), fps = 30, 
+          nframes = 800, end_pause = 150,
+          height = 5, width = 8, units = "in", res = 200)
+
+# animate(my.animation, height = 2, width = 3, units = "in", res = 150)
+```
+
+Reference:
+https://evamaerey.github.io/little_flipbooks_library/racing_bars/racing_barcharts.html
