@@ -1,0 +1,111 @@
+---
+title: "Generative art"
+output: html_document
+---
+
+```{r}
+# https://github.com/aschinchon/drrrawing-with-purrr/blob/master/drrrawing.R
+
+library(tidyverse)
+
+# This function creates the segments of the original polygon
+polygon <- function(n) {
+  tibble(
+    x    = accumulate(1:(n-1), ~.x+cos(.y*2*pi/n), .init = 0),
+    y    = accumulate(1:(n-1), ~.x+sin(.y*2*pi/n), .init = 0),
+    xend = accumulate(2:n,     ~.x+cos(.y*2*pi/n), .init = cos(2*pi/n)),
+    yend = accumulate(2:n,     ~.x+sin(.y*2*pi/n), .init = sin(2*pi/n)))
+}
+
+# This function creates segments from some mid-point of the edges
+mid_points <- function(d, p, a, i, FUN = ratio_f) {
+  d %>% mutate(
+    angle=atan2(yend-y, xend-x) + a,
+    radius=FUN(i),
+    x=p*x+(1-p)*xend,
+    y=p*y+(1-p)*yend,
+    xend=x+radius*cos(angle),
+    yend=y+radius*sin(angle)) %>% 
+    select(x, y, xend, yend)
+}
+
+# This function connect the ending points of mid-segments
+con_points <- function(d) {
+  d %>% mutate(
+    x=xend,
+    y=yend,
+    xend=lead(x, default=first(x)),
+    yend=lead(y, default=first(y))) %>% 
+    select(x, y, xend, yend)
+}
+
+```
+
+```{r}
+alph  <- 0.5 # transparency of curves in geom_curve
+niter <- 250 # Number of iterations
+
+edges <- sample(5:30, 1)   # Number of edges of the original polygon
+pond <- runif(1)  # Weight to calculate the point on the middle of each edge
+step  <- sample(5:30, 1) # Number of times to draw mid-segments before connect ending points
+angle <- runif(1) # angle of mid-segment with the edge
+curv <- runif(1, max = 3) # Curvature of curves
+# 7 0.5079871 22 0.6207071 0.6184261
+# 5 0.03311455 15 0.3690741 2.560233
+# curv = 0.5
+
+# edges = 7 
+# pond = 0.9155972
+# step = 29 
+# angle = 0.303335 
+# curv = 0.2162873
+cat(edges, pond, step, angle, curv)
+# line_color <- "indianred1" # Color of curves in geom_curve
+# back_color <- "antiquewhite" # Background of the ggplot
+line_color <- 'white'
+back_color <- '#01003F'
+ratio_f <-
+  function(x) {
+    sin(x)
+  } # To calculate the longitude of mid-segments
+
+# Generation on the fly of the dataset
+accumulate(
+  .f = function(old, y) {
+    if (y %% step != 0)
+      mid_points(old, pond, angle, y)
+    else
+      con_points(old)
+  },
+  1:niter,
+  .init = polygon(edges)
+) %>% bind_rows() -> df
+
+# Plot
+p <- ggplot(df) +
+  geom_curve(
+    aes(
+      x = x,
+      y = y,
+      xend = xend,
+      yend = yend
+    ),
+    curvature = curv,
+    color = line_color,
+    alpha = alph
+  ) +
+  # coord_equal() +
+  theme(
+    legend.position  = "none",
+    panel.background = element_rect(fill = back_color),
+    plot.background  = element_rect(fill = back_color),
+    axis.ticks       = element_blank(),
+    panel.grid       = element_blank(),
+    axis.title       = element_blank(),
+    axis.text        = element_blank()
+  )
+p
+
+# ggsave('generative3.png', p, width = 7, height = 7)
+```
+
