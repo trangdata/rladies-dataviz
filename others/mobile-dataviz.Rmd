@@ -45,6 +45,26 @@ gdp_mobile +
 ```
 
 ```{r}
+p <- mobile %>% 
+  filter(year == 2010) %>%
+  group_by(entity, continent) %>% 
+  summarise(mean_subs = mean(mobile_subs), .groups = 'drop') %>% 
+  arrange(desc(mean_subs)) %>% 
+  top_n(n = 20) %>% 
+  ggplot(aes(y = fct_reorder(entity, mean_subs), x = mean_subs, fill = continent)) +
+  scale_fill_carto_d(palette = 'Safe') +
+  scale_x_continuous(expand = expansion(0, 0)) +
+  labs(x = '% Mobile subscriptions', y = 'Country') +
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        legend.position = c(0.9, 0.2)) +
+  geom_col()
+ggsave('others/legend-title.png', p)
+```
+
+```{r}
 mobile %>% 
   filter(year == 2010) %>% 
   ggplot(aes(x = gdp_per_cap, y = mobile_subs)) +

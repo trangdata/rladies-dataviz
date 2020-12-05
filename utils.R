@@ -1,11 +1,60 @@
-selected_cou_FT <- c("Algeria", "Argentina","Australia", "Austria",
-                     "Bangladesh","Belgium","Bosnia and Herzegovina",
-                     "Brazil","Canada","Chile","China","Colombia","Czechia", "Denmark",
-                     "Dominican Republic","Egypt","Finland","France","Germany","Greece","Hungary",
-                     "India","Indonesia","Iran","Iraq","Ireland","Israel","Italy","Japan","Malaysia",
-                     "Mexico","Moldova","Morocco","Netherlands","Norway","Pakistan","Panama","Peru",
-                     "Philippines","Poland","Portugal","Russia","Romania","Korea, South","Saudi Arabia",
-                     "Serbia", "Spain","Sweden", "Switzerland","Turkey","United Kingdom", "Ukraine","US")
+# This file contains the ft_theme() and the `selected_cou_FT` vector containing names of countries we want to plot.
+
+selected_cou_FT <- c(
+  "Algeria",
+  "Argentina",
+  "Australia",
+  "Austria",
+  "Bangladesh",
+  "Belgium",
+  "Bosnia and Herzegovina",
+  "Brazil",
+  "Canada",
+  "Chile",
+  "China",
+  "Colombia",
+  "Czechia",
+  "Denmark",
+  "Dominican Republic",
+  "Egypt",
+  "Finland",
+  "France",
+  "Germany",
+  "Greece",
+  "Hungary",
+  "India",
+  "Indonesia",
+  "Iran",
+  "Iraq",
+  "Ireland",
+  "Israel",
+  "Italy",
+  "Japan",
+  "Malaysia",
+  "Mexico",
+  "Moldova",
+  "Morocco",
+  "Netherlands",
+  "Norway",
+  "Pakistan",
+  "Panama",
+  "Peru",
+  "Philippines",
+  "Poland",
+  "Portugal",
+  "Russia",
+  "Romania",
+  "Korea, South",
+  "Saudi Arabia",
+  "Serbia",
+  "Spain",
+  "Sweden",
+  "Switzerland",
+  "Turkey",
+  "United Kingdom",
+  "Ukraine",
+  "US"
+)
 
 ft_theme <-
   function (legend_right = FALSE,
@@ -62,7 +111,12 @@ ft_theme <-
         panel.background = element_rect(fill = "#FFF0E5", color = NA),
         panel.spacing.y = unit(30, 'pt'),
         panel.grid = element_blank(),
-        strip.text = element_text(color = '#0A508C', size = 10, face = 'bold', hjust = 0),
+        strip.text = element_text(
+          color = '#0A508C',
+          size = 10,
+          face = 'bold',
+          hjust = 0
+        ),
         axis.title = ggplot2::element_text(
           color = other_text_color,
           size = ggplot2::rel(0.9),
@@ -114,5 +168,3 @@ ft_theme <-
         complete = TRUE
       )
   }
-
-

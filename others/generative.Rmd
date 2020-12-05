@@ -106,6 +106,6 @@ p <- ggplot(df) +
   )
 p
 
-# ggsave('generative3.png', p, width = 7, height = 7)
+# ggsave('figs/generative3.png', p, width = 7, height = 7)
 ```
 

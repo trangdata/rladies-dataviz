@@ -13,12 +13,9 @@ For example:
 ?mean
 ```
 
-```{r}
-# install.packages('zoo')
-# remotes::install_github("RamiKrispin/coronavirus")   
-# remotes::install_github("yutannihilation/gghighlight")
-# install.packages('ggthemes')
-```
+I have put some lengthy script in `utils.R` so we only have to "source" it here.
+This file contains `ft_theme()` (see Exercises) and 
+the `selected_cou_FT` vector containing the country names we're interested in.
 
 ## Setup
 ```{r}
@@ -48,6 +45,9 @@ Choose a few countries to plot (or go with preselected ones):
 selected_countries <- selected_cou_FT
 ```
 
+*Tip*: Piping into {.} allows you to comment out any line of the pipes
+(including the last one).
+
 ```{r}
 mov_avg_covid <- coronavirus %>%
   filter(country %in% selected_countries,
@@ -58,6 +58,7 @@ mov_avg_covid <- coronavirus %>%
   mutate(week_movavg = zoo::rollmean(total_death, k = 7, fill = "extend")) %>%
   mutate(id = row_number()) %>% 
   filter(id %% 7 == 0) %>% # reduce the number of dots to plot to make ploting faster
+  ungroup() %>% 
   {.}
 ```
 
@@ -65,7 +66,7 @@ mov_avg_covid <- coronavirus %>%
 mov_avg_covid %>% 
   filter(id %% 7 == 0) %>% # reduce the number of dots to plot to make ploting faster
   ggplot(aes(date, week_movavg)) +
-  geom_path(size = 1.5) 
+  geom_path() 
 ```
 
 What happened?
@@ -75,7 +76,7 @@ How do we tell ggplot to draw lines between points of the same country?
 mov_avg_covid %>% 
   filter(id %% 7 == 0) %>% # reduce the number of dots to plot to make ploting faster
   ggplot(aes(date, week_movavg, group = country)) +
-  geom_path(size = 1.5)
+  geom_path()
 ```
 
 How can we tell which country is which?
@@ -84,22 +85,29 @@ Can we try colors?
 ```{r}
 mov_avg_covid %>% 
   ggplot(aes(date, week_movavg, group = country, color = country)) +
-  geom_path(size = 1.5)
+  geom_path()
 ```
 
-Try other conditions for filtering:
-- Visualize only Asian countries?
-- Visualize number of cases instead of death tolls?
+OK, this is cool, but perhaps too many colors.
+How about we highlight only a few countries?
+
+```{r}
+mov_avg_covid %>% 
+  ggplot(aes(date, week_movavg, color = country)) +
+  geom_path() +
+  gghighlight(country %in% c('US', 'Korea, South'))
+```
 
 What about facets? (or small multiples)
 ```{r}
 mov_avg_covid %>% 
   ggplot(aes(date, week_movavg)) +
   geom_path(size = 1.5) +
-  facet_wrap(~ country) +
-  NULL
+  facet_wrap(~ country)
 ```
 
+*Tip*: Like piping into {.}, `+ NULL` allows you to comment out any line 
+of the ggplot code (including the last one).
 
 But I want to compare one country to the others...
 ```{r}
@@ -115,18 +123,67 @@ mov_avg_covid %>%
 ### Exercises
 
 1. Can we add `scale_y_log10()` to plot the y-axis in log scale? 
-Do we think this is "better"?
-2. Examine the `scale_x_date()` function to see if we can adjust the `x` ticks 
-to "break" every 2 months?
-3. Maybe add `ft_theme()`? (already sourced from `utils.R` earlier)
-What about other gg_themes()?
-4. Do you think the label for the `x` axis is necessary? 
-What about the `y` axis? What if we want to remove them?
-5. Can we make `#0A508C` the color of the highlighted country?
+Do you think this is "better"?
+Can we make the "labels" fancier by 
+adding `labels = scales::comma_format()` inside `scale_y_log10()`?
+```{r eval=FALSE}
+mov_avg_covid %>% 
+  ggplot(aes(date, week_movavg, group = country)) +
+  geom_path() +
+  facet_wrap(~ country) +
+  gghighlight() +
+  ____________
+```
 
+2. Examine the `scale_x_date()` function to see if we can adjust the `x` ticks 
+to "break" every 2 months? 
+(Hint: run `?scale_x_date` on the console or a new chunk)
 
 ```{r eval=FALSE}
 mov_avg_covid %>% 
+  ggplot(aes(date, week_movavg, group = country)) +
+  geom_path() +
+  facet_wrap(~ country) +
+  gghighlight() +
+  scale_x_date(breaks = ________)
+```
+
+3. Maybe add `ft_theme()`? (already sourced from `utils.R` earlier)
+What about other gg_themes()?
+```{r eval=FALSE}
+mov_avg_covid %>% 
+  ggplot(aes(date, week_movavg, group = country)) +
+  geom_path() +
+  facet_wrap(~ country) +
+  gghighlight() +
+  scale_x_date(breaks = ________)
+```
+
+4. Do you think the label for the `x` axis is necessary? 
+What about the `y` axis? What if we want to remove them?
+```{r eval=FALSE}
+mov_avg_covid %>% 
+  ggplot(aes(date, week_movavg, group = country)) +
+  geom_path() +
+  facet_wrap(~ country) +
+  gghighlight() +
+  labs(x = _________, y = _________) 
+```
+
+5. Can we make `#0A508C` the color of the highlighted country?
+```{r eval=FALSE}
+mov_avg_covid %>% 
+  ggplot(aes(date, week_movavg, group = country)) +
+  geom_path(color = _________, size = 1.5) +
+  gghighlight() +
+  facet_wrap(~ country) +
+  NULL
+```
+
+6. Putting 1-5 all together now, and let's save it to `figs/`.
+
+```{r eval=FALSE}
+ft_rep <- mov_avg_covid %>% 
   ggplot(aes(date, week_movavg, group = country)) +
   geom_path(color = _________, size = 1.5) +
   gghighlight() +
@@ -138,11 +195,17 @@ mov_avg_covid %>%
        subtitle = _________) +
   ft_theme() +
   NULL
+
+ft_rep
+ggsave('figs/my_ft_rep.png', ft_rep, height = 10, width = 15)
 ```
 
 Extra credits:
-6. Can we use the argument `unhighlighted_params` in `gghighlight()` to make the unhighlighted countries thinner and lighter? (so that the highlighted country stands out  more)
-7. Can we use the argument `sec.axis` in `scale_y_log10()` couple with the function `sec_axis()`
+7. Can we use the argument `unhighlighted_params` in `gghighlight()` to make the unhighlighted countries thinner and lighter? (so that the highlighted country stands out  more)
+8. Can we use the argument `sec.axis` in `scale_y_log10()` together with the function `sec_axis()` to add a secondary axis?
+9. Can we try other conditions for filtering (from the beginning):
+- Visualize only Asian countries?
+- Visualize number of cases instead of death tolls?
 
 ```{r}
 
