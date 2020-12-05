@@ -3,6 +3,12 @@ title: "COVID-19 visualization"
 output: html_document
 ---
 
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(
+  fig.path = 'figs/', dev = c('pdf', 'png')
+)
+```
+
 If this is your first time in RMarkdown, welcome!
 Some quick primers:
 - To run a *line* of code, place your cursor there and `Cmd+Enter` (or `Ctrl+Enter` in Windows/Linux).
@@ -18,11 +24,12 @@ This file contains `ft_theme()` (see Exercises) and
 the `selected_cou_FT` vector containing the country names we're interested in.
 
 ## Setup
+
 ```{r}
 library(tidyverse)  
 library(zoo) # calculate moving average
-library(gghighlight)
-library(coronavirus)
+library(gghighlight) # highlight
+library(coronavirus) # data
 
 source('utils.R', echo=TRUE)
 ```
@@ -124,8 +131,13 @@ mov_avg_covid %>%
 
 1. Can we add `scale_y_log10()` to plot the y-axis in log scale? 
 Do you think this is "better"?
-Can we make the "labels" fancier by 
-adding `labels = scales::comma_format()` inside `scale_y_log10()`?
+Any idea why we get the warning messages?
+```
+Warning messages:
+1: In self$trans$transform(x) : NaNs produced
+2: Transformation introduced infinite values in continuous y-axis 
+```
+
 ```{r eval=FALSE}
 mov_avg_covid %>% 
   ggplot(aes(date, week_movavg, group = country)) +
@@ -230,7 +242,7 @@ or even put them back into just one "big single" rather than "small multiples",
 add some direct labeling with `geom_text()` or `library(ggrepel)`,
 etc.
 (Check out https://ig.ft.com/coronavirus-chart/ for inspiration!)
-Please share your final chart(s) here:
+Please drag and drop your final chart(s) here:
 https://drive.google.com/drive/folders/1N7VNDqBkakzX07XZaiO5xUKtqdqLbX8z?usp=sharing
 
 
@@ -377,6 +389,6 @@ p <- mov_avg_covid %>%
        subtitle = "Daily death with coronavirus (7-day rolling average), by number of the days since 3 daily deaths first recorded") +
   ft_theme() +
   NULL
-
-ggsave('ft_rep.png', p, height = 10, width = 15)
+p
+ggsave('figs/ft_rep.png', p, height = 10, width = 15)
 ```
