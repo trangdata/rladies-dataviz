@@ -6,4 +6,8 @@ The main file is [`covid-dataviz.Rmd`](covid-dataviz.Rmd).
 If you finish all the exercises, please feel free to browse around: 
 there are a few nuggets of code/visualization that I think you'll like.
 
+Ask any question [here](http://tiny.cc/rladies-dataviz)!
+
 Thanks for attending!
+
+![](figs/table.png)
